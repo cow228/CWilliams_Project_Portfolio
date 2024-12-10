@@ -105,6 +105,41 @@ _Find Position_
 ## Rank Calculation Slow
 The rank calculations can take up to a minute to solve when apply a function to each row individually.  This is too slow to be used during gameplay
 ### Solution
-replace for loop logic with vector methods to speed up results.
+replace for loop logic with vector methods to speed up results. <br>
+Example Improvements:
+instead of calculating each value using a program for each type of hand, create logic to apply rules vectorwise programatically
+
+```python
+#define basic values
+rank_types = ['4 of a kind', 'full house', '3 of a kind', 'two pair', 'pair']
+count1_value_inv = (14-cards_rank['count1_value'])
+count2_value_inv = (14-cards_rank['count2_value'])
+#create logic for each type, including that one of thee relevant values (count1/count2) must be from the hole
+rank_logic = [(cards_rank['count1'] == 4) & (cards_rank['count1_in_hole']),                             #4 of a kind
+            (cards_rank['count1'] == 3) & (cards_rank['count2'] == 2) & (cards_rank['count_in_hole']),#full house
+            (cards_rank['count1'] == 3) & (cards_rank['count1_in_hole']),                             #3 of a kind
+            (cards_rank['count1'] == 2) & (cards_rank['count2'] == 2) & (cards_rank['count_in_hole']),#two pair
+            (cards_rank['count1'] == 2) & (cards_rank['count1_in_hole'])]                             #pair
+#create multipliers for each type, to find rank, [0]*count1 [1]*count2 [2]=high card value
+mults = [     [13, 0, cards_rank['max_hole_not_c1']],       #4 of a kind
+            [13, 1, 0],                                   #full house
+            [13, 0, cards_rank['max_hole_not_c1']],       #3 of a kind
+            [169, 13, cards_rank['max_hole_not_c1c2']],   #two pair
+            [13, 0, cards_rank['max_hole_not_c1']]]       #pair
+rank_calc_dict = {rank_type: [rank_logic[i], ranks_dict[rank_type], 
+                                          mults[i][0],
+                                          mults[i][1], 
+                                          mults[i][2]]
+                                          for i, rank_type in enumerate(rank_types)}
+#apply parameters for each rank type
+for rank_type in rank_types:
+  params = rank_calc_dict[rank_type]
+  cards_rank[rank_type] = 10000
+  cards_rank.loc[params[0], rank_type] = (params[1] + 
+                                          count1_value_inv * params[2] + 
+                                          count2_value_inv * params[3] +
+                                          params[4])
+cards_rank['high card'] = ranks_dict['high card'] + cards_rank['hole_max']
+```
 
 
