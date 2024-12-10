@@ -24,7 +24,7 @@ Based on the players hand and position at the table this information can be look
 ![Example Preflop Ranges](/Poker/images/Preflop_Output.png)
 
 <br>
-Code References: <br>
+Code References (section titles in code): <br>
 _Determine Preflop Action_ <br>
 
 
@@ -67,15 +67,44 @@ Calculate the percentages automatically based on the range of hands, and the flo
 
 ![Example Flop Output](/Poker/images/Flop_output.png)
 <br>
-Code References: <br>
+Code References (section titles in code): <br>
+_Create Hole Combos_ <br>
 _Rank Hands_ <br>
 _Determine Hand Types_ <br>
 _Create Chart_
 
 
-## Manual Input Slow
+## Slow Manual Input
+Determining the flop and preflop requires knowing what the hole and flop cards are as well as the player position.  This must be manually input.  This can be cumbersome and sometimes too slow to be used while in a fast paced hand.
 ### Solution
+use image recognition to automatically detect these values.  In the image is an example game state.  Program will need to identify the value or location of the 3 items in red, the dealer button, the flop cards (suit and rank for each) and the hole cards (suit and rank for each)
+![Global Poker Gameplay](/Poker/images/Gameplay.png)
+1. Take a screenshot of the playing area
+2. find contours of image
+3. Identify flop cards by limiting the size and location of contours in the created list
+   1. for the contour of each flop card crop the image to be just the top left corner with the rank text
+   2. run pytesseract text regognition to identify the value
+   3. apply a color mask to identify the suit
+5. Identify hole cards by limiting the size and location of contours in the created list
+   1. for the contour of each hole card crop the image to be just the top left corner with the rank text
+   2. run pytesseract text regognition to identify the value
+   3. apply a color mask to identify the suit
+4. determine player position by finding the dealer button
+   1. manually create a list of areas for each table size, area should include the player and be large enough to make sure button would be in image if at their position
+   2. for each set region identify is the button is there through color masking.  if specific color of button is there in large enough quantity identify that position as the button
+   3. for each set region determine if that playing is in.  this is handeled with another color mask to check for the color of blue on the back of the cards.  if this is absent then the player is not in
+   4. based on the position of the button and which players are in determine player position
+
+<br>
+Code References (section titles in code): <br>
+_Get Screenshot_ <br>
+_Find Card Values_ <br>
+_Find Card Suits_ <br>
+_Find Position_
 
 ## Rank Calculation Slow
+The rank calculations can take up to a minute to solve when apply a function to each row individually.  This is too slow to be used during gameplay
 ### Solution
+replace for loop logic with vector methods to speed up results.
+
 
