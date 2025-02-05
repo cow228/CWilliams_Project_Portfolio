@@ -1,4 +1,31 @@
-# Goal
+# Goal (refined version)
+- Create functions that more efficiently and flexibly analyze data.
+- Expand on best models from archieved file
+- Try new models
+### Classification RF
+created function representation of methods from archived version.  Designed the model to 'classify' the percent likelihood that the player would have have a given integer number of points per game.  I.E 60% chance of 15 ppg, 15% chance of 14 ppg ... <br>
+Used the prediction percents for each integer to find a weighted average prediction and to create a standard distribution value.  <br>
+The model's prediction's corelation to actuals is 0.73 <br>
+It results in the following chart showing predictions in blue, error bars in black and actuals in red.
+![RF_2024](/Football/images/rf_2024.png) <br>
+### Neural Network
+Created neural network class from basic algebraic components.  <br>
+experimented with multiple parameter sets:
+- 1 to 3 layers
+- with 5 to 45 neurons in each.  (with only 700 data points more neurons did not produce better predicitve results)
+Wanted to limit the total number of parameters to 70 (to follow rule of thumb to have 10x as much data as parameters)
+- needed to reduce number of attributes since data included more than 100
+- identified most significant attributes by creating a 1 layer model with all attributes included and identifying the 5 with the greatest asigned weight.
+- used those most significant attributes to build a model with 5 attributes, and 2 layers with 10 neurons in the first and 1 in the second.
+The model's prediction's corelation to actuals is 0.78 <br>
+It results in the following chart showing predictions in blue, error bars in black and actuals in red.
+![RF_2024](/Football/images/nn_2024.png) <br>
+### Comparison of models
+both models have a high corelation value.  Visually, the random forest model seems to trend closer to actuals while the neural network's value vary more.  <br>
+### Next steps
+see if either model is able to predict which players will exceed or fall short of their prediction.  Without predicting the actual error this could still give valuable information during fantasy draft process to identify high ceiling and low floor players. 
+
+# Goal (archived version)
 Determine if yearly fantasy footbal stats can be used to predict next year's stats <br>
 focus on year long stats to ignore huge week-to-week variation <br>
 focus on wide recievers to simply any differences between position groups<br>
