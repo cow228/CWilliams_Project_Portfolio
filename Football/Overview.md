@@ -154,3 +154,4 @@ compare average points per game for ADP teams to predicted team.
 | **Neural Network 12 attribute** | **8%** | **36%** | **yes** |
 
 ### Display Predictions for 2024
+![Predicted Values Compared to Actual](/Football/images/output.png)
