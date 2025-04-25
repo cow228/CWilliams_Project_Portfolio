@@ -16,5 +16,5 @@ Code to automatically handle most phases of data mining <br>
   - Displays precision recall curve for classifiers
   - allows input of data specific prediction success metrics
 <br>
-Example output from the preprocessor:
-![Preprocessing](/Pipeline/images/Preprocessing_Output.png)
+Example output from the preprocessor: <br>
+![Preprocessing](/Pipeline/images/Preprocessing_Output.PNG)
