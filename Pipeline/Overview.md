@@ -15,3 +15,6 @@ Code to automatically handle most phases of data mining <br>
   - Grid search starts with few, far apart parameters, if a significant difference in accuracy is observed grid search repeats with more narrow values centered on best parameters from the inital search.
   - Displays precision recall curve for classifiers
   - allows input of data specific prediction success metrics
+<br>
+Example output from the preprocessor:
+![Preprocessing](/Pipeline/images/Preprocessing_Output.png)
