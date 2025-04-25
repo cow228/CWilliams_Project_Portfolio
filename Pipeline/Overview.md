@@ -17,4 +17,4 @@ Code to automatically handle most phases of data mining <br>
   - allows input of data specific prediction success metrics
 <br>
 Example output from the preprocessor: <br>
-![Preprocessing](/Pipeline/images/Preprocessing_Output.PNG)
+![Preprocessing](/Pipeline/images/Preprocessing_Output.png)
