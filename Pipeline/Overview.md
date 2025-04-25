@@ -19,3 +19,8 @@ Code to automatically handle most phases of data mining <br>
 Example output from the preprocessor: <br>
 
 ![Preprocessing](/Pipeline/images/Preprocessing_Output.png)
+
+
+Example output from the feature selector: <br>
+
+![Preprocessing](/Pipeline/images/Feature_Selection_Output.png)
