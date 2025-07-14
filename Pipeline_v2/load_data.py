@@ -16,15 +16,15 @@ def check_feature_type(column):
     avg_class_mem = len(column)/classes
 
     # check data type
-    if is_numeric_dtype(column):
-        datatype = 'numeric'
     # if the data can reasonably be considered categorical convert it
     # reasonable if it has on average 3 members per class and less than 25 classes
-    elif (avg_class_mem>2) and (classes<50):
+    if (avg_class_mem>3) and (classes<25):
         datatype = 'categorical'
         column = column.astype('category')
         if classes == 2:
             datatype = 'binary'
+    elif is_numeric_dtype(column):
+        datatype = 'numeric'
     # if it isn't one of these acceptable types drop it
     else: 
         datatype = 'drop'
@@ -74,6 +74,3 @@ def load_file(path):
 
     # check feature types and drop unacceptable ones
     return asses_df_features(data)
-
-df, feature_lists, feature_types = load_file('nfl_historical_data.csv')
-print(feature_lists['drop'])
