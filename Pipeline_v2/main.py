@@ -11,9 +11,15 @@ import test_normality
 if __name__ == '__main__':
     import argparse
 
+    # input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='path to CSV')
     args = parser.parse_args()
 
+    # load data
     df, feature_lists, feature_types = load_data.load_file(args.path)
-    test_normality.normal_test_plot(df, columns=feature_lists['numeric'], output=True, plot=True)
+    # test normality
+    nn_df = test_normality.normal_test_plot(df, columns=feature_lists['numeric'], output=False, plot=False)
+    df = test_normality.normalitiy_transform(nn_df, df)
+    nn_dd = test_normality.normal_test_plot(df, columns=feature_lists['numeric'], output=True, plot=True)
+
