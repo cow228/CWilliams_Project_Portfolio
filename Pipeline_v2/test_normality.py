@@ -5,6 +5,7 @@ from scipy import stats
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 def normal_test_plot(df, columns=None, output=False, plot=False):
     """
@@ -74,7 +75,7 @@ def normal_test_plot(df, columns=None, output=False, plot=False):
             n_cols = min(3, n_features)
             n_rows = (n_features + n_cols - 1) // n_cols
             # Create subplots
-            _, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
             axes = axes.flatten() if n_features > 1 else [axes]
             # Plot each non-normal feature in its own subplot
             for i, (_, row) in enumerate(non_normal_df.iterrows()):
@@ -88,6 +89,7 @@ def normal_test_plot(df, columns=None, output=False, plot=False):
                 axes[j].set_visible(False)
             plt.tight_layout()
             plt.show()
+            
         else:
             print("No non-normal features to plot.")
 
@@ -96,3 +98,93 @@ def normal_test_plot(df, columns=None, output=False, plot=False):
         print(non_normal_df)
 
     return non_normal_df
+
+def normalitiy_transform(non_normal_df, data_df, method='auto'):
+    """
+    Apply appropriate transformations to normalize features identified as non-normal.
+    : 
+    """   
+    # Track transformations applied
+    transformations = {}
+    
+    # Process each non-normal feature
+    for _, row in non_normal_df.iterrows():
+        feature = row['Feature']
+        skewness = row['Skewness']
+            
+        # Get data without NaN values
+        data = data_df[feature].dropna()
+        
+        # Choose transformation method
+        if method == 'auto':
+            # Select transformation based on skewness
+            if abs(skewness) > 1:
+                if skewness > 0:
+                    transform_method = 'log'
+                else:
+                    transform_method = 'sqrt'
+            else:
+                transform_method = 'box-cox' if all(data > 0) else 'yeo-johnson'
+        else:
+            transform_method = method
+            
+        # Apply transformation
+        try:
+            if transform_method == 'log':
+                # Handle negative values if present
+                if data.min() <= 0:
+                    min_val = data.min()
+                    shift = abs(min_val) + 1 if min_val <= 0 else 0
+                    data = np.log(data + shift)
+                    transformations[feature] = f"log(x + {shift})"
+                else:
+                    data = np.log(data)
+                    transformations[feature] = "log(x)"
+                    
+            elif transform_method == 'sqrt':
+                # Handle negative values if present
+                if data.min() < 0:
+                    min_val = data.min()
+                    shift = abs(min_val) + 1
+                    data = np.sqrt(data + shift)
+                    transformations[feature] = f"sqrt(x + {shift})"
+                else:
+                    data = np.sqrt(data)
+                    transformations[feature] = "sqrt(x)"
+                    
+            elif transform_method == 'box-cox':
+                # Box-Cox requires all positive values
+                if data.min() <= 0:
+                    min_val = data.min()
+                    shift = abs(min_val) + 1
+                    transformed, lambda_val = stats.boxcox(data + shift)
+                    data = transformed
+                    transformations[feature] = f"box-cox(x + {shift}, λ={lambda_val:.4f})"
+                else:
+                    transformed, lambda_val = stats.boxcox(data)
+                    # Create a temporary series with the right index
+                    temp_series = pd.Series(index=data.index, dtype='float64')
+                    # Use .loc to properly set values and avoid SettingWithCopyWarning
+                    temp_series.loc[data.index] = transformed
+                    data = temp_series
+                    transformations[feature] = f"box-cox(x, λ={lambda_val:.4f})"
+                    
+            elif transform_method == 'yeo-johnson':
+                # Yeo-Johnson works with negative values
+                transformed, lambda_val = stats.yeojohnson(data)
+                # Create a temporary series with the right index
+                temp_series = pd.Series(index=data.index, dtype='float64')
+                # Use .loc to properly set values and avoid SettingWithCopyWarning
+                temp_series.loc[data.index] = transformed
+                data = temp_series
+                transformations[feature] = f"yeo-johnson(x, λ={lambda_val:.4f})"
+        
+        except Exception as e:
+            print(f"Error transforming {feature}: {str(e)}")
+            continue
+    
+        # change data_col with normal value
+        data_df[feature] = data
+
+    print(f"Applied normality correction to {len(non_normal_df)} features")
+    return data_df
