@@ -26,7 +26,7 @@ def check_feature_type(column):
     elif is_numeric_dtype(column):
         datatype = 'numeric'
     # if it isn't one of these acceptable types drop it
-    else: 
+    else:
         datatype = 'drop'
 
     return datatype, column
@@ -52,14 +52,14 @@ def asses_df_features(dataframe):
         if datatype == 'drop':
             feature_lists['drop'][col] = dataframe[col].dtype
             dataframe.drop(columns=[col], inplace=True)
-            continue            
+            continue
         # update lists
         feature_lists[datatype].append(col)
         feature_types[col] = datatype
 
     return dataframe, feature_lists, feature_types
 
-def load_file(path):
+def load_file(path, drops=False):
     '''
     load file based on input path and define feature types.
 
@@ -71,6 +71,10 @@ def load_file(path):
     # load dataframe and unify column names
     data = pd.read_csv(path)
     data.columns = data.columns.str.replace(' ', '_')
+
+    # drop columns if needed
+    if drops:
+        data.drop(columns=drops, inplace=True)
 
     # check feature types and drop unacceptable ones
     return asses_df_features(data)
