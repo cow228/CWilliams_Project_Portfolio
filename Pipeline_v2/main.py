@@ -1,12 +1,9 @@
 '''
-import data file and perform preprocessing steps:
-1) check for nulls
-2) test for normality
-3) transform non normal data
-4) handle outliers
+Find feature corelations to target
 '''
+import feature_imp_cl
 import load_data
-import test_normality
+import subprocess
 
 if __name__ == '__main__':
     import argparse
@@ -14,12 +11,20 @@ if __name__ == '__main__':
     # input arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='path to CSV')
+    parser.add_argument('target', help='column name of target feature')
+    parser.add_argument('process', help='t/f if you want to preprocess the data')
     args = parser.parse_args()
 
-    # load data
-    df, feature_lists, feature_types = load_data.load_file(args.path)
-    # test normality
-    nn_df = test_normality.normal_test_plot(df, columns=feature_lists['numeric'], output=False, plot=False)
-    df = test_normality.normalitiy_transform(nn_df, df)
-    nn_dd = test_normality.normal_test_plot(df, columns=feature_lists['numeric'], output=True, plot=True)
+    # perform preprocessing if necessary
+    path = args.path
+    if args.process:
+        subprocess.run(['python','preprocessing.py '+args.path])
+        path = args.path+'_procd'
 
+    # load data
+    data, feature_lists, feature_types = load_data.load_file(path)
+    
+    # feature correlation
+    data_fts = feature_imp_cl.Data_features(data, args.target)
+    data_fts.plot_target_correlation()
+    
