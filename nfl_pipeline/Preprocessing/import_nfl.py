@@ -8,7 +8,7 @@ import os
 import nfl_data_py as nfl
 import win32com.client
 
-def load_combined_data(stat_type, years, output=False):
+def load_combined_data(stat_type, years, weekly_data, output=False):
     '''
     returns pro football reference data using nfl_data_py
     NOTE: pfr data is not available before 2018, ngs data is not available before 2016
@@ -52,11 +52,35 @@ def load_combined_data(stat_type, years, output=False):
                             left_on=['season','week','player_display_name'],
                             right_on=['season', 'week', 'pfr_player_name'])
     # clean df and limit to regular season
+    df_merge.rename(columns={'player_display_name': 'player'}, inplace=True)
     df_merge = df_merge[df_merge['season_type']=='REG']
     df_merge.drop(columns=['pfr_player_name','season_type'], inplace=True)
+    # get snap count data
+    snaps_df = nfl.import_snap_counts(years)[['season','week','player','offense_pct']]
+    df_merge = df_merge.merge(snaps_df, how='left', on=['season','week','player'])
+    # merge team data
+    team_weekly_df = weekly_data.copy()
+    team_weekly_df.drop(columns=['player'], inplace=True)
+    team_weekly_df = team_weekly_df.groupby(['season', 'week', 'team']).sum().reset_index()
+    team_weekly_df.columns = ['team_'+col if not col in ['season', 'week', 'team'] else col for col in team_weekly_df.columns]
+    df_merge = df_merge.merge(team_weekly_df, how='left', on=['season', 'week', 'team'])
+    # merge additional individual data
+    new_stats_cols = {
+        'rush': ['season', 'week', 'player',
+        'rushing_first_downs', 'rushing_epa'], 
+        'pass': ['season', 'week', 'player',
+        'passing_first_downs', 'passing_epa',
+        'rushing_yards', 'rushing_tds', 'rushing_first_downs', 'rushing_epa'],
+        'rec': ['season', 'week', 'player',
+        'passing_first_downs', 'passing_epa']
+        }
+    cols = new_stats_cols[stat_type]
+    weekly_data = weekly_data[cols]
+    df_merge = df_merge.merge(weekly_data, how='left', on=['season','week','player'])
     # print if output true
     filename = stat_type + '_stats.csv'
-    df_merge.to_csv(filename, index=False)
+    file_path = os.path.join('files', filename)
+    df_merge.to_csv(file_path, index=False)
     if output:
         # close excel file if open
         excel = win32com.client.Dispatch("Excel.Application")
@@ -67,6 +91,13 @@ def load_combined_data(stat_type, years, output=False):
         os.startfile(filename)
 
 if __name__ == '__main__':
-    select_years = [2016,2017,2018,2019,2020,2021,2022,2023,2024]
+    select_years = [2018,2019,2020,2021,2022,2023,2024]
+    # import weekly data
+    cols = ['season', 'week', 'recent_team', 'player_display_name',
+        'passing_yards', 'passing_tds', 'passing_first_downs', 'passing_epa',
+        'rushing_yards', 'rushing_tds', 'rushing_first_downs', 'rushing_epa']
+    weekly_df = nfl.import_weekly_data(select_years, cols)
+    weekly_df.rename(columns={'recent_team':'team','player_display_name':'player'}, inplace=True)
+    # import positional data and merge with weekly
     for select_type in ['pass','rec','rush']:
-        load_combined_data(select_type,select_years)
+        load_combined_data(select_type,select_years,weekly_df)

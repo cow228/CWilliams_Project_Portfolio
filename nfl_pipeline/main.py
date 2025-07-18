@@ -2,7 +2,7 @@
 Find feature corelations to target
 '''
 import feature_imp_cl
-import CWilliams_Project_Portfolio.Pipeline_v2.Preprocessing.load_data as load_data
+import Preprocessing.load_data as load_data
 import subprocess
 
 if __name__ == '__main__':
@@ -12,17 +12,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('path', help='path to CSV')
     parser.add_argument('target', help='column name of target feature')
-    parser.add_argument('process', help='t/f if you want to preprocess the data')
     args = parser.parse_args()
 
-    # perform preprocessing if necessary
-    path = args.path
-    if args.process:
-        subprocess.run(['python','preprocessing.py '+args.path])
-        path = args.path+'_procd'
-
     # load data
-    data, feature_lists, feature_types = load_data.load_file(path)
+    data, feature_lists, feature_types = load_data.load_file(args.path)
     
     # feature correlation
     data_fts = feature_imp_cl.Data_features(data, args.target)
