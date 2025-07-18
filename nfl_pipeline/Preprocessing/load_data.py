@@ -69,6 +69,7 @@ def load_file(path, drops=False):
     :return [dict] - list of features organized by type (included droped features)
     '''
     # load dataframe and unify column names
+    print(path)
     data = pd.read_csv(path)
     data.columns = data.columns.str.replace(' ', '_')
 

@@ -6,8 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import os
 
-def normal_test_plot(df, columns=None, output=False, plot=False):
+def normal_test_plot(df, columns=None, output=False, plot=False, stat_name=None):
     """
     Performs normality tests on all numeric features.
     - Uses Shapiro-Wilk test if there are fewer than 5000 rows
@@ -75,7 +76,7 @@ def normal_test_plot(df, columns=None, output=False, plot=False):
             n_cols = min(3, n_features)
             n_rows = (n_features + n_cols - 1) // n_cols
             # Create subplots
-            fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+            _, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
             axes = axes.flatten() if n_features > 1 else [axes]
             # Plot each non-normal feature in its own subplot
             for i, (_, row) in enumerate(non_normal_df.iterrows()):
@@ -88,7 +89,8 @@ def normal_test_plot(df, columns=None, output=False, plot=False):
             for j in range(i+1, len(axes)):
                 axes[j].set_visible(False)
             plt.tight_layout()
-            plt.show()
+            file_path = os.path.join('preproc_files', stat_name+'_non_norm.png')
+            plt.savefig(file_path)
             
         else:
             print("No non-normal features to plot.")

@@ -4,6 +4,7 @@ also deals with null values
 '''
 import pandas as pd
 import numpy as np
+import os
 
 def handle_outliers(df, method='cap', threshold=2, drop=False, columns=None):
     """
@@ -72,7 +73,7 @@ def handle_outliers(df, method='cap', threshold=2, drop=False, columns=None):
     print(f"greatest affected feature: {outlier_df.iloc[0,0]}, {round(outlier_df.iloc[0,1]/len(df)*100)}% affected\n")
     return df
 
-def analyze_null_values(df, silent=True):
+def analyze_null_values(df, stat_name, silent=True):
     """
     Prints out how many null values per feature and what percent of rows have a null feature.
     
@@ -109,7 +110,8 @@ def analyze_null_values(df, silent=True):
             print("\nRows with null values:")
         rows_with_null_values = df[df.isnull().any(axis=1)]
         if not silent:
-            rows_with_null_values.to_csv('null_values.csv')
+            file_path = os.path.join('preproc_files', stat_name+'_null_values.csv')
+            rows_with_null_values.to_csv(file_path)
     else:
         if not silent:
             print("\nNo rows contain null values.")
