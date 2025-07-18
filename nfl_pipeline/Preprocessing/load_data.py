@@ -78,4 +78,10 @@ def load_file(path, drops=False):
         data.drop(columns=drops, inplace=True)
 
     # check feature types and drop unacceptable ones
-    return asses_df_features(data)
+    new_df, ftr_list, ftr_types = asses_df_features(data)
+    for col in new_df.columns:
+        data[col] = new_df[col]
+
+    print('columns dropped: ', ftr_list['drop'])
+
+    return new_df, ftr_list, ftr_types

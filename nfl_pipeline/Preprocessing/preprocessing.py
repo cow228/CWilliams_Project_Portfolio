@@ -19,16 +19,20 @@ def preprocess(df,num_features, stat_name):
     :return [dataframe] - preprocessed data
     '''
     # find nulls
-    handle_outliers.analyze_null_values(df, stat_name, False)
+    handle_outliers.analyze_null_values(df.copy(), stat_name, False)
 
     # test normality
-    nn_df = test_normality.normal_test_plot(df, columns=num_features, 
+    nn_df = test_normality.normal_test_plot(df.copy(), columns=num_features,
                                             output=False, plot=False)
-    df = test_normality.normalitiy_transform(nn_df, df)
-    test_normality.normal_test_plot(df, columns=num_features, output=True, plot=True, stat_name=stat_name)
+    num_df = test_normality.normalitiy_transform(nn_df, df.copy())
+    test_normality.normal_test_plot(num_df, columns=num_features, output=True, plot=True, stat_name=stat_name)
 
     # handle outliers
-    df = handle_outliers.handle_outliers(df, columns=num_features)
+    num_df = handle_outliers.handle_outliers(num_df, columns=num_features)
+
+    # merge adjusted numeric columns with original
+    for col in num_df.columns:
+        df[col] = num_df[col]
 
     return df
 
