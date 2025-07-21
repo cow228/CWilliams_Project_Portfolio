@@ -6,6 +6,7 @@ returns 3 csv files for receiving, rushing and passing
 '''
 import os
 import nfl_data_py as nfl
+import pandas as pd
 import numpy as np
 
 def load_combined_data(stat_type, years, weekly_data, output=False):
@@ -77,6 +78,9 @@ def load_combined_data(stat_type, years, weekly_data, output=False):
     cols = new_stats_cols[stat_type]
     weekly_data = weekly_data[cols]
     df_merge = df_merge.merge(weekly_data, how='left', on=['season','week','player'])
+    # merge additional individual data
+    # merge team fantasy points added and lost by roster changes
+    df_merge = new_team_age_draft(df_merge)
     # calculate fantasy points
     df_merge['ffpts'] = add_ff_points(df_merge, stat_type)
     df_ffpts = df_merge.iloc[1:][['season','week','player','ffpts']]
@@ -111,6 +115,19 @@ def add_ff_points(df, stat_type):
     
     return pts
 
+def new_team_age_draft(df):
+    """
+    import file with team/old team values as well as age and draft position
+    calculate the team by team fantasy point change from new players.
+    smooth out new player ffpts and draft positon with moving average
+    """
+    df_new_data = pd.read_csv('files/player_age_draft_team.csv')[['season','week','player','draft_number','age','games_played', 'draft_pos_decay']]
+    df_new_team_points = pd.read_csv('files/new_team_pts.csv')[['season','week','team','fpts_gained','fpts_lost']]
+    
+    df = df.merge(df_new_data, how='left', on=['season','week','player'])
+    df = df.merge(df_new_team_points, how='left', on=['season','week','team'])
+
+    return df
 
 if __name__ == '__main__':
     select_years = [2018,2019,2020,2021,2022,2023,2024]
