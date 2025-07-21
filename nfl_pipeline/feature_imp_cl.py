@@ -6,9 +6,10 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype
 from sklearn.feature_selection import mutual_info_classif, chi2, f_classif, mutual_info_regression
 from scipy.stats import pearsonr
-import dcor
+# import dcor
 import matplotlib.pyplot as plt
 import textwrap
+import os
 
 class Data_features:
     '''
@@ -20,7 +21,7 @@ class Data_features:
     '''
     def __init__(self, dataframe, target):
         dataframe.columns = dataframe.columns.str.replace(' ', '_')
-        self.data = dataframe.reset_index(drop=True)
+        self.data = dataframe.dropna().reset_index(drop=True)
         self.target = target
         self.features = [col.replace(' ', '_') for col in self.data.columns if col != self.target]
         self.numeric_features = self.data[self.features].select_dtypes(include='number').columns.tolist()
@@ -78,16 +79,16 @@ class Data_features:
         target_data = self.data[self.target]
 
         def mi_clf_discrete_ft(col):
-            mi = mutual_info_classif(feature_data[col].to_numpy().reshape(-1, 1), target_data.astype('category'), discrete_features=True)
+            mi = mutual_info_classif(feature_data[[col]], target_data.astype('category'), discrete_features=True) #.to_numpy().reshape(-1, 1)
             return mi
         def mi_clf_continuous_ft(col):
-            mi = mutual_info_classif(feature_data[col].to_numpy().reshape(-1, 1), target_data.astype('category'), discrete_features=False)
+            mi = mutual_info_classif(feature_data[[col]], target_data.astype('category'), discrete_features=False)
             return mi
         def mi_reg_discrete_ft(col):
-            mi = mutual_info_regression(feature_data[col].to_numpy().reshape(-1, 1), target_data, discrete_features=True)
+            mi = mutual_info_regression(feature_data[[col]], target_data, discrete_features=True)
             return mi
         def mi_reg_continuous_ft(col):
-            mi = mutual_info_regression(feature_data[col].to_numpy().reshape(-1, 1), target_data, discrete_features=False)
+            mi = mutual_info_regression(feature_data[[col]], target_data, discrete_features=False)
             return mi
         def chi_square(col):
             f, p = chi2(feature_data[col].to_numpy().reshape(-1, 1), target_data.astype('category'))
@@ -100,9 +101,9 @@ class Data_features:
             # set the categorical value to the target
             target = target_data
             feature = feature_data[col].to_numpy().reshape(-1, 1)
-            if self.target_type == 'numeric':
-                target = feature_data[col].to_numpy().reshape(-1, 1)
-                feature = target_data
+            # if self.target_type == 'numeric':
+            #     target = feature_data[col].to_numpy().reshape(-1, 1)
+            #     feature = target_data
             f, p = f_classif(feature, target)
             # return 1-p value for compound calculation, return 0 if option selected and p > 0.05
             # if pval_zero:
@@ -110,9 +111,9 @@ class Data_features:
             # else:
             #     return [1-p[0]]
             return f
-        def dcorr(col):
-            dcor_val = dcor.distance_correlation(feature_data[col], target_data)
-            return dcor_val
+        # def dcorr(col):
+        #     dcor_val = dcor.distance_correlation(feature_data[col], target_data)
+        #     return dcor_val
         def lift(col):
             lift = 0
             n = len(feature_data)
@@ -123,7 +124,7 @@ class Data_features:
                 lift = p_xy / (p_x * p_y)
             return lift
         def corr(col):
-            corr, _ = pearsonr(feature_data[col].to_numpy().reshape(-1, 1), target_data)
+            corr, _ = pearsonr(feature_data[col], target_data)
             return corr
         def test_list(col):
             feature_type = 'numeric'
@@ -133,12 +134,12 @@ class Data_features:
             possible_target_tests = {
                 'binary' : {mi_clf_discrete_ft, mi_clf_continuous_ft, chi_square, lift},
                 'categorical' : {mi_clf_discrete_ft, mi_clf_continuous_ft, chi_square},
-                'numeric' : {mi_reg_discrete_ft, mi_reg_continuous_ft, dcorr, corr}
+                'numeric' : {mi_reg_discrete_ft, mi_reg_continuous_ft, corr} #could include dcorr
             }
             possible_feature_tests = {
                 'binary' : {mi_clf_discrete_ft, mi_reg_discrete_ft, chi_square, lift},
                 'categorical' : {mi_clf_discrete_ft, mi_reg_discrete_ft, chi_square},
-                'numeric' : {mi_clf_continuous_ft, mi_reg_continuous_ft, dcorr, corr}
+                'numeric' : {mi_clf_continuous_ft, mi_reg_continuous_ft, corr} #could include dcorr
             }
             anova_test = {}
             if self.target_type == 'numeric' and feature_type in ['categorical', 'binary']: anova_test = {anova}
@@ -153,7 +154,10 @@ class Data_features:
         for col in features:
             correlations[col] = {}
             for test in test_list(col):
-                correlations[col][test.__name__] = test(col)[0]
+                try:
+                    correlations[col][test.__name__] = test(col)[0]
+                except:
+                    correlations[col][test.__name__] = test(col)
 
             correlations[col]['svd_importance'] = self.svd_filter_df.loc[self.svd_filter_df['Feature'] == col, 'Importance'].values[0]
             correlations[col]['dt_importance'] = self.dt_feature_importance.loc[self.dt_feature_importance['Feature'] == col, 'Importance'].values[0]
@@ -194,6 +198,7 @@ class Data_features:
         
         # Get top N features
         plot_data = self.target_correlations.head(top_n)
+        print(plot_data.to_markdown())
         
         # Setup for bar chart
         wrap_lables = [textwrap.fill(label, width=16) for label in plot_data.index]
@@ -204,11 +209,15 @@ class Data_features:
         
         # Calculate positions for grouped bars
         x = np.arange(len(features))
+        x = x.astype(float)
         width = 0.8 / len(correlation_types)  # Width of bars with spacing
+        # print(f"x: dtype={x.dtype}, type={type(x)}, shape={x.shape}")
         
         # Plot bars for each correlation type
         for i, column in enumerate(correlation_types):
             offset = (i - len(correlation_types)/2 + 0.5) * width
+            # print(f"{column}: type={type(plot_data[column])}, shape={getattr(plot_data[column], 'shape', None)}")
+            print(plot_data[column])
             plt.bar(x + offset, plot_data[column], width=width, label=column, alpha=0.5)
         
         # Plot compound correlation as a line
@@ -222,8 +231,7 @@ class Data_features:
         plt.legend(loc='best')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
-        
-        plt.show()
+        plt.savefig('feature_importance.png')
 
         return self
     
@@ -314,7 +322,7 @@ class Data_features:
             target = self.data[self.target]
 
         lr = model.fit(x, target)
-        number_non_zero_coef = len([coef for coef in lr.coef_[0] if coef>0])
+        number_non_zero_coef = len([coef for coef in lr.coef_ if coef>0]) # was lr.coef_[0] before
 
         while number_non_zero_coef > feature_limit:
             regularization = regularization * regularization_change
@@ -401,3 +409,11 @@ class Data_features:
         self.svd_filter_df =  vip_df[vip_df['Importance']>1][['Feature', 'Importance']].sort_values(by='Importance', ascending=False)
 
         return self
+    
+# from Preprocessing.load_data import load_file
+
+# filename = 'rush_proc.csv'
+# file_path = os.path.join('CWilliams_Project_Portfolio','nfl_pipeline','files', filename)
+# data, feature_lists, feature_types = load_file(file_path)
+# data_fts = Data_features(data, 'ffpts')
+# data_fts.plot_target_correlation()

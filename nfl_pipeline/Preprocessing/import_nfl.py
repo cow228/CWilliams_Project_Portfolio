@@ -6,7 +6,7 @@ returns 3 csv files for receiving, rushing and passing
 '''
 import os
 import nfl_data_py as nfl
-import win32com.client
+import numpy as np
 
 def load_combined_data(stat_type, years, weekly_data, output=False):
     '''
@@ -77,18 +77,40 @@ def load_combined_data(stat_type, years, weekly_data, output=False):
     cols = new_stats_cols[stat_type]
     weekly_data = weekly_data[cols]
     df_merge = df_merge.merge(weekly_data, how='left', on=['season','week','player'])
+    # calculate fantasy points
+    df_merge['ffpts'] = add_ff_points(df_merge, stat_type)
+    df_ffpts = df_merge.iloc[1:][['season','week','player','ffpts']]
+    df_ffpts['week'] = df_ffpts['week'] - 1
+    df_ffpts.rename(columns={'week':'temp_week', 'ffpts': 'ffpts_target'}, inplace=True)
+    df_merge = df_merge.merge(df_ffpts, how='left', left_on=['season','week','player'], right_on=['season','temp_week','player'])
+    df_merge.drop(columns=['temp_week'], inplace=True)
     # print if output true
     filename = stat_type + '_stats.csv'
     file_path = os.path.join('files', filename)
     df_merge.to_csv(file_path, index=False)
     if output:
-        # close excel file if open
-        excel = win32com.client.Dispatch("Excel.Application")
-        for workbook in excel.Workbooks:
-            if workbook.Name == filename:
-                workbook.Close(SaveChanges=False)  # or True if you want to save
-                break
         os.startfile(filename)
+
+def add_ff_points(df, stat_type):
+    """
+    based on dataframe and stat type calculate fantasy points.
+    calculate only based on that stat, so no rec stats for rush.
+    This will make prediction easier.
+    """
+    # identify the relevant stat cols for each type
+    stat_cols = {
+        'rush': (['rush_yards', 'rush_touchdowns'],[0.1,6]),
+        'pass': (['pass_yards', 'pass_touchdowns','interceptions'],[0.04,4,-2]),
+        'rec': (['receptions','yards','rec_touchdowns'],[0.5,0.1,6])
+    }
+    pts = np.zeros(len(df))
+    for i in range(len(stat_cols[stat_type])):
+        col = stat_cols[stat_type][0][i]
+        mult = stat_cols[stat_type][1][i]
+        pts += df[col]*mult
+    
+    return pts
+
 
 if __name__ == '__main__':
     select_years = [2018,2019,2020,2021,2022,2023,2024]
