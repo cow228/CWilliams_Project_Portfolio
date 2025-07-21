@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
 
     df = df.sort_values(by=['season','week']).reset_index(drop=True)
-    df['prev_team'] = 0
+    df['next_team'] = 0
     df['games_played'] = 0
 
     player_list = df['player'].unique()
@@ -25,12 +25,12 @@ if __name__ == '__main__':
         current_player += 1
         # create offset list of teams played for each week
         team_list = df[df['player']==player]['team'].to_list()
-        prev_team_list = [team_list[0]]
-        prev_team_list.extend(team_list[:-1])
+        next_team_list = team_list[1:]
+        next_team_list.append(team_list[-1])
         # create element showing games played
         games_played = list(range(1,len(team_list)+1))
         # apply lists to dataframe per player
-        df.loc[df['player']==player,'prev_team'] = prev_team_list
+        df.loc[df['player']==player,'next_team'] = next_team_list
         df.loc[df['player']==player,'games_played'] = games_played
 
         if current_player%100 == 0:
@@ -47,17 +47,17 @@ if __name__ == '__main__':
     df = df.merge(df_ffpts, how='left', on=['season','week','player'])
 
     # calculate per team, new fpts
-    df['is_new_team'] = df['prev_team'] != df['team']
-    df_nt = df[df['is_new_team'] == True][['season','week','team','fantasy_points_ra','player','prev_team']]
+    df['is_new_team'] = df['next_team'] != df['team']
+    df_nt = df[df['is_new_team'] == True][['season','week','team','fantasy_points_ra','player','next_team']]
     # df_nt.to_csv('files/new_team.csv', index=False)
-    df_nt.drop(columns=['player','prev_team'], inplace=True)
+    df_nt.drop(columns=['player','next_team'], inplace=True)
 
     df_nt_grouped_gain = df_nt.groupby(['season','week','team']).sum().reset_index()
     df_nt_grouped_gain.rename(columns={'fantasy_points_ra':'fpts_gained'}, inplace=True)
 
-    df_nt = df[df['is_new_team'] == True][['season','week','prev_team','fantasy_points_ra']]
-    df_nt_grouped_loss = df_nt.groupby(['season','week','prev_team']).sum().reset_index()
-    df_nt_grouped_loss.rename(columns={'fantasy_points_ra':'fpts_lost', 'prev_team':'team'}, inplace=True)
+    df_nt = df[df['is_new_team'] == True][['season','week','next_team','fantasy_points_ra']]
+    df_nt_grouped_loss = df_nt.groupby(['season','week','next_team']).sum().reset_index()
+    df_nt_grouped_loss.rename(columns={'fantasy_points_ra':'fpts_lost', 'next_team':'team'}, inplace=True)
     df_nt_grouped = df_nt_grouped_gain.merge(df_nt_grouped_loss, how='left', on=['season','week','team'])
 
     df_nt_grouped['fpts_gained'] = df_nt_grouped['fpts_gained'].rolling(window=4, min_periods=1).mean()

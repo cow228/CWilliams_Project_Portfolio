@@ -59,6 +59,13 @@ def load_combined_data(stat_type, years, weekly_data, output=False):
     # get snap count data
     snaps_df = nfl.import_snap_counts(years)[['season','week','player','offense_pct']]
     df_merge = df_merge.merge(snaps_df, how='left', on=['season','week','player'])
+    # shift weeks by 1 so that the next weeks points are predicted with the team player will be on next week
+    players = df_merge['player'].unique()
+    for player in players:
+        team_list = df_merge[df_merge['player']==player]['team'].to_list()
+        new_team_list = team_list[1:]
+        new_team_list.append(team_list[-1])
+        df_merge.loc[df_merge['player']==player, 'team'] = new_team_list
     # merge team data
     team_weekly_df = weekly_data.copy()
     team_weekly_df.drop(columns=['player'], inplace=True)
@@ -81,6 +88,8 @@ def load_combined_data(stat_type, years, weekly_data, output=False):
     # merge additional individual data
     # merge team fantasy points added and lost by roster changes
     df_merge = new_team_age_draft(df_merge)
+    # add coach data
+    df_merge = coach_data_input(df_merge)
     # calculate fantasy points
     df_merge['ffpts'] = add_ff_points(df_merge, stat_type)
     df_ffpts = df_merge.iloc[1:][['season','week','player','ffpts']]
@@ -127,6 +136,21 @@ def new_team_age_draft(df):
     df = df.merge(df_new_data, how='left', on=['season','week','player'])
     df = df.merge(df_new_team_points, how='left', on=['season','week','team'])
 
+    return df
+
+def coach_data_input(df):
+    """
+    input coaching data from csv
+    """
+    coach_df = pd.read_csv('files/coach_data.csv')
+    coaches = coach_df['coach'].unique()
+    for coach in coaches:
+        team_list = coach_df[coach_df['coach']==coach]['team'].to_list()
+        new_team_list = team_list[1:]
+        new_team_list.append(team_list[-1])
+        coach_df.loc[coach_df['coach']==coach, 'team'] = new_team_list
+
+    df = df.merge(coach_df, how='left', on=['season','week','team'])
     return df
 
 if __name__ == '__main__':

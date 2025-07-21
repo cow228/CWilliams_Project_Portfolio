@@ -55,7 +55,10 @@ class Data_features:
         
         for col in df[features].select_dtypes(include='number').columns:
             # Bin into quartiles and label them 1–4
-            binned_df[col] = pd.qcut(df[col], q=4, labels=[1, 2, 3, 4])
+            try:
+                binned_df[col] = pd.qcut(df[col], q=4, labels=[1, 2, 3, 4])
+            except:
+                continue
 
         # binned_df.drop(self.target,axis=1, inplace=True)
         
@@ -194,13 +197,16 @@ class Data_features:
         return self
 
     def plot_target_correlation(self, top_n = 10, pval_zero = True, svd = False):
-        plt.figure(figsize=(14, 5))
+        fig_xdim = int(16*(top_n/10))
+        fig_ydim = int(fig_xdim/3)
+        plt.figure(figsize=(fig_xdim, fig_ydim))
         
         # Get top N features
         plot_data = self.target_correlations.head(top_n)
         print(plot_data.to_markdown())
         
         # Setup for bar chart
+        wrap_width = top_n/10
         wrap_lables = [textwrap.fill(label, width=16) for label in plot_data.index]
         wrap_lables = [label.replace(" ", "\nx\n") for label in wrap_lables]
         features = wrap_lables
