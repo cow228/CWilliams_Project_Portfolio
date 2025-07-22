@@ -39,18 +39,29 @@ def preprocess(df,num_features, stat_name):
 if __name__ == '__main__':
 
     for stat in ['rec', 'rush', 'pass']:
+        # target id
+        target = 'ffpts_target'
+        
         # load data
         file_name = stat + '_stats.csv'
         # file_path = os.path.join('..', 'files', file_name) #only works when executing from Preprocessing directory
-        file_path = os.path.join('files', file_name)
-        # abs_path = file_path.resolve()
+        file_path = os.path.join('import_files', file_name)
         print(file_path)
         data, feature_lists, feature_types = load_data.load_file(file_path)
 
+        # seperate target
+        features_data = data.drop(columns=[target])
+        if target in feature_lists['numeric']:
+            feature_lists['numeric'].remove(target)
+        target_data = data[target]
+
         # preprocess
-        data = preprocess(data,feature_lists['numeric'], stat)
+        features_data = preprocess(features_data,feature_lists['numeric'], stat)
+
+        # recombine
+        features_data['target'] = target_data
 
         # output
         file_name = stat + '_proc.csv'
-        file_path = os.path.join('files', file_name)
-        data.to_csv(file_path, index=False)
+        file_path = os.path.join('preproc_files', file_name)
+        features_data.to_csv(file_path, index=False)
