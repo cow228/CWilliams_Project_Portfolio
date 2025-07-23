@@ -19,7 +19,8 @@ class Data_features:
     - computes additional features
     - calculates composite feature strength score
     '''
-    def __init__(self, dataframe, target):
+    def __init__(self, dataframe, target, stat_type):
+        self.stat_type = stat_type
         dataframe.columns = dataframe.columns.str.replace(' ', '_')
         self.data = dataframe.dropna().reset_index(drop=True)
         self.target = target
@@ -194,16 +195,19 @@ class Data_features:
                 correlations.drop(stat_col, axis=1, inplace=True)
 
         self.target_correlations = correlations.sort_values(by='compound_correlation', ascending=False)
+        file_name = self.stat_type + '_FI.csv'
+        file_path = os.path.join('feature_files', file_name)
+        self.target_correlations.to_csv(file_path, index=True)
         return self
 
-    def plot_target_correlation(self, top_n = 10, pval_zero = True, svd = False, stat_type=None):
+    def plot_target_correlation(self, top_n = 15, pval_zero = True, svd = False):
         fig_xdim = int(16*(top_n/10))
         fig_ydim = int(fig_xdim/3)
         plt.figure(figsize=(fig_xdim, fig_ydim))
         
         # Get top N features
         plot_data = self.target_correlations.head(top_n)
-        print(plot_data.to_markdown())
+        # print(plot_data.to_markdown())
         
         # Setup for bar chart
         wrap_width = top_n/10
@@ -223,7 +227,7 @@ class Data_features:
         for i, column in enumerate(correlation_types):
             offset = (i - len(correlation_types)/2 + 0.5) * width
             # print(f"{column}: type={type(plot_data[column])}, shape={getattr(plot_data[column], 'shape', None)}")
-            print(plot_data[column])
+            # print(plot_data[column])
             plt.bar(x + offset, plot_data[column], width=width, label=column, alpha=0.5)
         
         # Plot compound correlation as a line
@@ -233,17 +237,16 @@ class Data_features:
         plt.xticks(x, features, rotation=0)
         plt.xlabel('Features')
         plt.ylabel('Correlation Value')
-        plt.title(f'Top {top_n} {stat_type} Features by Correlation with Target')
+        plt.title(f'Top {top_n} {self.stat_type} Features by Correlation with Target')
         plt.legend(loc='best')
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.tight_layout()
         # save image
-        file_name = stat_type + '_FI.png'
-        path = file_path = os.path.join('Features', file_name)
- 
-        plt.savefig(path)
+        file_name = self.stat_type + '_FI.png'
+        file_path = os.path.join('feature_files', file_name)
+        plt.savefig(file_path)
 
-        return self
+        # return self
     
     def _svd(self):  # decomissioned in favor of SVD filter
         from sklearn.decomposition import TruncatedSVD
@@ -339,7 +342,7 @@ class Data_features:
             model.set_params(**{reg_param: regularization})
 
             lr = model.fit(x, target)
-            number_non_zero_coef = len([coef for coef in lr.coef_[0] if coef>0])
+            number_non_zero_coef = len([coef for coef in lr.coef_ if coef>0]) # was lr.coef_[0] before
         
         poly_df = pd.DataFrame({'Feature': poly.get_feature_names_out(self.features), 'Importance': lr.coef_[0]})
         poly_df = poly_df[~poly_df['Feature'].isin(self.features)].sort_values(by='Importance', ascending=False)
@@ -420,10 +423,10 @@ class Data_features:
 
         return self
     
-# from Preprocessing.load_data import load_file
+# from load_data import load_file
 
-# filename = 'rush_proc.csv'
-# file_path = os.path.join('CWilliams_Project_Portfolio','nfl_pipeline','files', filename)
+# filename = 'pass_proc.csv'
+# file_path = os.path.join('nfl_pipeline','preproc_files',filename)
 # data, feature_lists, feature_types = load_file(file_path)
 # data_fts = Data_features(data, 'ffpts')
-# data_fts.plot_target_correlation()
+# data_fts.plot_target_correlation(stat_type='pass')
