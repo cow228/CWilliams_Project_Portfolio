@@ -3,6 +3,7 @@ This repository contains projects that I have completed independently in Python.
 Each project has a brief write-up here and a more detailed "Overview" page in its respective folder
 
 ## Fantasy Football Predictor
+[Currently Being Refactors in 'nfl-pipeline']
 Build Model to predict fantasy football points per game for wide recievers. <br>
 Build function to import data in usable format. <br>
 Explore data. <br>
