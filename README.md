@@ -4,6 +4,9 @@ Each project has a brief write-up here and a more detailed "Overview" page in it
 
 ## Fantasy Football Predictor
 [Currently Being Refactors in 'nfl-pipeline']
+Refactoring to use python scripts and makefiles
+Goal is to make pipeline more flexible for reusability
+Goal is to make the code easier to use rather than scrolling through large Jupyter notebook
 
 Build Model to predict fantasy football points per game for wide recievers. <br>
 Build function to import data in usable format. <br>
